@@ -17,11 +17,13 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
        */a
     async buildSystemActions(groupIds) {
       // Set actor and token variables
-      this.actors = (!this.actor) ? this._getActors() : [this.actor]
-      this.actorType = this.actor?.type
+      this.actors = (!this.actor) ? this.#getActors() : [this.actor]
+      this.actorType = this.actor?.type;
 
       if (this.actorType === 'character') {
         this.#buildCharacterActions();
+      } else if (this.actorType === 'monster') {
+        this.#buildMonsterActions();
       } else if (!this.actor) {
         this.#buildMultipleTokenActions()
       }
@@ -43,11 +45,24 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
     }
 
     /**
+     * Build monster actions
+     * @private
+     */
+    #buildMonsterActions() {
+      this.#buildAttributes();
+      this.#buildSkills();
+      this.#buildMonsterCombat();
+      this.#buildSpells();
+      this.#buildTokenUtility();
+    }
+
+    /**
      * Build multiple token actions
      * @private
      * @returns {object}
      */
     #buildMultipleTokenActions() {
+      this.#buildTokenUtility();
     }
 
     /**
@@ -76,7 +91,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
           const name = `${translatedLabel} - ${attribute.value}`;
 
           const encodedValue = [actionType, id].join(this.delimiter);
-            
+
           actions.push({
             id,
             name,
@@ -122,7 +137,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
           const tooltip = `${translatedAttributeLabel}: ${attribute.value} + ${translatedSkillLabel}: ${skill.value}`
 
           const encodedValue = [actionType, id].join(this.delimiter);
-            
+
           actions.push({
             id,
             name,
@@ -170,22 +185,22 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
           if (actionType === 'weapon') {
             const category = coreModule.api.Utils.i18n(`WEAPON.${item.system.category.toUpperCase()}`);
             const range = coreModule.api.Utils.i18n(`RANGE.${item.system.range.toUpperCase()}`);
-              
+
             description = `${category} - ${range} - ${item.system.damage} ${coreModule.api.Utils.i18n('DAMAGE')}`
           } else if (actionType === 'armor') {
             let part = item.system.part;
             if (part === 'head') part = 'helmet';
             const armorPart = coreModule.api.Utils.i18n(`ARMOR.${part.toUpperCase()}`);
-              
+
             description = `${armorPart} - ${item.system.features} - ${item.system.bonus.value}/${item.system.bonus.max}`
           }
           const tooltip = description;
-            
+
           const encodedValue = [actionType, id].join(this.delimiter);
           const img = Utils.getImage(item);
 
           if (!actionsMap[actionType]) actionsMap[actionType] = [];
-            
+
           actionsMap[actionType].push({
             id,
             name,
@@ -211,7 +226,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
       const parentGroupData = { id: 'combat' };
       for (const type of Object.keys(actionsMap)) {
         const groupData = { id: type, name: coreModule.api.Utils.i18n(`HEADER.${type.toUpperCase()}`), type: 'system' };
-          
+
         // // Add actions to HUD
         this.addGroup(groupData, parentGroupData)
         this.addActions(actionsMap[type], groupData);
@@ -227,9 +242,101 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
           encodedValue: ['action', combat_action.value].join(this.delimiter),
         })
       })
-  
+
       const groupData = { id: 'actions', name: coreModule.api.Utils.i18n(`HEADER.ACTIONS`), type: 'system' };
-          
+
+      // // Add actions to HUD
+      this.addGroup(groupData, parentGroupData)
+      this.addActions(actions, groupData);
+    }
+
+    /**
+     * Build combat tab
+     * @private
+     */
+    async #buildMonsterCombat() {
+      const allowedTypes = ['monsterAttack', 'armor'];
+      // Get items
+      const items = this.actor.items;
+      // Exit if there are no skills
+      if (items.length === 0) return;
+
+      let actionsMap = {};
+      const randomAttack = {
+        id: 'random',
+        name: coreModule.api.Utils.i18n('HEADER.ATTACK'),
+        encodedValue: 'monsterAttack|random',
+      };
+      actionsMap['monsterAttack'] = [randomAttack]
+
+      try {
+        items.forEach(item => {
+          const id = item._id;
+          const actionType = item.type;
+
+          if (!allowedTypes.includes(actionType)) return;
+
+          const name = item.name;
+
+          let description = item.system.description;
+          if (actionType === 'monsterAttack') {
+            const category = coreModule.api.Utils.i18n(`ATTACK.${item.system.damageType.toUpperCase()}`);
+            const range = coreModule.api.Utils.i18n(`RANGE.${item.system.range.toUpperCase()}`);
+
+            description = `${category} - ${range} - ${item.system.damage} ${coreModule.api.Utils.i18n('DAMAGE')}`
+          }
+          const tooltip = description;
+
+          const encodedValue = [actionType, id].join(this.delimiter);
+          const img = Utils.getImage(item);
+
+          if (!actionsMap[actionType]) actionsMap[actionType] = [];
+
+          actionsMap[actionType].push({
+            id,
+            name,
+            img,
+            encodedValue,
+            tooltip
+          })
+        })
+      } catch (e) {
+        coreModule.api.Logger.error(e);
+        return null;
+      }
+
+      const parentGroupData = { id: 'combat' }
+
+      // Add monster attack group
+      const attackGroupData = { id: 'monsterAttack', name: coreModule.api.Utils.i18n(`ITEM.TypeMonsterattack`), type: 'system' };
+      // // Add actions to HUD
+      this.addGroup(attackGroupData, parentGroupData)
+      this.addActions(actionsMap['monsterAttack'], attackGroupData);
+
+      // Add global armor action
+      const armorGroupData = { id: 'armor', name: coreModule.api.Utils.i18n(`HEADER.ARMOR`), type: 'system' };
+      const armor = {
+        id: 'monster',
+        name: coreModule.api.Utils.i18n('ARMOR.TOTAL'),
+        encodedValue: 'armor|monster',
+      };
+      // // Add actions to HUD
+      this.addGroup(armorGroupData, parentGroupData)
+      this.addActions([armor], armorGroupData);
+
+      // Creation Standard combat actions
+      const COMBAT_ACTIONS = [{ label: 'BREAK_FREE', value: 'break-free' }, { label: 'DISARM', value: 'disarm' }, { label: 'DODGE', value: 'dodge' }, { label: 'GRAPPLE', value: 'grapple' }, { label: 'GRAPPLE_ATTACK', value: 'grapple-attack' }, { label: 'PARRY', value: 'parry' }, { label: 'RETREAT', value: 'retreat' }, { label: 'SHOVE', value: 'shove' }, { label: 'UNARMED_STRIKE', value: 'unarmed' }];
+      let actions = [];
+      COMBAT_ACTIONS.forEach(combat_action => {
+        actions.push({
+          id: combat_action.value,
+          name: coreModule.api.Utils.i18n(`ACTION.${combat_action.label}`),
+          encodedValue: ['action', combat_action.value].join(this.delimiter),
+        })
+      })
+
+      const groupData = { id: 'actions', name: coreModule.api.Utils.i18n(`HEADER.ACTIONS`), type: 'system' };
+
       // // Add actions to HUD
       this.addGroup(groupData, parentGroupData)
       this.addActions(actions, groupData);
@@ -258,12 +365,12 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 
           const description = item.system.description;
           const tooltip = description;
-            
+
           const encodedValue = [actionType, id].join(this.delimiter);
           const img = Utils.getImage(item);
 
           if (!actionsMap[item.system.rank]) actionsMap[item.system.rank] = [];
-            
+
           actionsMap[item.system.rank].push({
             id,
             name,
@@ -283,7 +390,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
         const id = `spells_rank_${type}`;
         const name = `${coreModule.api.Utils.i18n('SPELL.RANK')} ${type}`
         const groupData = { id, name, type: 'system' };
-          
+
         // // Add actions to HUD
         this.addGroup(groupData, parentGroupData)
         this.addActions(actionsMap[type], groupData);
@@ -314,7 +421,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
           const encodedValue = [actionType, id].join(this.delimiter);
 
           const cssClass = condition.value ? ' active' : ''
-            
+
           actions.push({
             id,
             name,
@@ -357,7 +464,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
           const name = `${translatedLabel} ${translatedValue}`;
 
           const encodedValue = [actionType, id].join(this.delimiter);
-            
+
           actions.push({
             id,
             name,
@@ -470,6 +577,18 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
       // Add actions to HUD
       this.addGroup(groupData, parentGroupData)
       this.addActions(actions, groupData);
+    }
+
+    /** Get selected actors from canvas. */
+    #getActors() {
+      const allowedTypes = ['character', 'monster'];
+      const tokens = coreModule.api.Utils.getControlledTokens();
+      const actors = tokens.filter((token) => token.actor).map((token) => token.actor);
+      if (actors.every((actor) => allowedTypes.includes(actor.type))) {
+        return actors;
+      }
+
+      return [];
     }
   }
 })
