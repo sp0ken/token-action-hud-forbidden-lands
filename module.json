@@ -22,13 +22,7 @@
   "styles": [
     "./styles/tah-template-style.css"
   ],
-  "languages": [
-    {
-      "lang": "en",
-      "name": "English",
-      "path": "languages/en.json"
-    }
-  ],
+  "languages": [],
   "packs": [],
   "relationships": {
     "systems": [
@@ -64,7 +58,7 @@
   "socket": false,
   "manifest": "This is auto replaced",
   "download": "This is auto replaced",
-  "readme": "https://github.com/Larkinabout/fvtt-token-action-hud-template#readme",
+  "readme": "https://github.com/sp0ken/token-action-hud-forbidden-lands#readme",
   "protected": false,
   "coreTranslation": false,
   "library": false
