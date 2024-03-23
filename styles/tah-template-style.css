@@ -454,6 +454,7 @@
 }
 
 .tah-button-image {
+    background-color: #fff !important;
     border-radius: var(--tah-border-radius);
     height: var(--tah-button-height);
     min-width: var(--tah-button-min-width);
