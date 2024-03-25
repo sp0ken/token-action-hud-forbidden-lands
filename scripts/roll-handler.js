@@ -12,7 +12,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          * @param {object} event        The event
          * @param {string} encodedValue The encoded value
          */
-        async handleActionClick (event, encodedValue) {
+        async handleActionClick(event, encodedValue) {
             const [actionTypeId, actionId] = encodedValue.split('|')
 
             const renderable = ['item']
@@ -46,7 +46,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          * @param {object} event        The event
          * @param {string} encodedValue The encoded value
          */
-        async handleActionHover (event, encodedValue) {}
+        async handleActionHover(event, encodedValue) {}
 
         /**
          * Handle group click
@@ -55,7 +55,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          * @param {object} event The event
          * @param {object} group The group
          */
-        async handleGroupClick (event, group) {}
+        async handleGroupClick(event, group) {}
 
         /**
          * Handle action
@@ -66,14 +66,35 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          * @param {string} actionTypeId The action type id
          * @param {string} actionId     The actionId
          */
-        async #handleAction (event, actor, token, actionTypeId, actionId) {
+        async #handleAction(event, actor, token, actionTypeId, actionId) {
             switch (actionTypeId) {
-            case 'item':
-                this.#handleItemAction(event, actor, actionId)
-                break
-            case 'utility':
-                this.#handleUtilityAction(token, actionId)
-                break
+                case 'attributes':
+                    this.#handleAttributeAction(event, actor, actionId)
+                    break
+                case 'skills':
+                    this.#handleSkillAction(event, actor, actionId)
+                    break
+                case 'armor':
+                    this.#handleArmorAction(event, actor, actionId)
+                    break
+                case 'weapon':
+                    this.#handleWeaponAction(event, actor, actionId)
+                    break
+                case 'action':
+                    this.#handleCombatAction(event, actor, actionId)
+                    break
+                case 'spell':
+                    this.#handleSpellAction(event, actor, actionId)
+                    break
+                case 'condition':
+                    this.#handleConditionAction(event, actor, actionId)
+                    break
+                case 'consumable':
+                    this.#handleConsumableAction(event, actor, actionId)
+                    break
+                case 'utility':
+                    this.#handleUtilityAction(actor, token, actionId)
+                    break
             }
         }
 
@@ -84,7 +105,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          * @param {object} actor    The actor
          * @param {string} actionId The action id
          */
-        #handleItemAction (event, actor, actionId) {
+        #handleItemAction(event, actor, actionId) {
             const item = actor.items.get(actionId)
             item.toChat(event)
         }
@@ -92,17 +113,126 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
         /**
          * Handle utility action
          * @private
+         * @param {object} actor    The actor
          * @param {object} token    The token
          * @param {string} actionId The action id
          */
-        async #handleUtilityAction (token, actionId) {
+        async #handleUtilityAction(actor, token, actionId) {
             switch (actionId) {
-            case 'endTurn':
-                if (game.combat?.current?.tokenId === token.id) {
-                    await game.combat?.nextTurn()
-                }
-                break
+                case 'rests':
+                    actor.rest();
+                    break
+                case 'pride':
+                    actor.sheet.rollPride();
+                    break;
+                case 'reputation':
+                    actor.sheet.rollReputation();
+                    break;
+                case 'initiative':
+                    const combatants = [...game.combat?.combatants?.entries()]
+                    if (combatants.length) {
+                        const combatantId = combatants.find(([key, combatant]) => combatant.actorId === actor.id)[0]
+                        if (combatantId) game.combat.rollInitiative(combatantId);
+                    }
+                    break;
+                case 'endTurn':
+                    if (game.combat?.current?.tokenId === token.id) {
+                        await game.combat?.nextTurn()
+                    }
+                    break
             }
+        }
+
+        /**
+         * Handle attribute action
+         * @private
+         * @param {object} event    The event
+         * @param {object} actor    The actor
+         * @param {string} actionId The action id
+         */
+        #handleAttributeAction(event, actor, actionId) {
+            actor.sheet.rollAttribute(actionId);
+        }
+
+        /**
+         * Handle skill action
+         * @private
+         * @param {object} event    The event
+         * @param {object} actor    The actor
+         * @param {string} actionId The action id
+         */
+        #handleSkillAction(event, actor, actionId) {
+            actor.sheet.rollSkill(actionId);
+        }
+
+        /**
+         * Handle armor action
+         * @private
+         * @param {object} event    The event
+         * @param {object} actor    The actor
+         * @param {string} actionId The action id
+         */
+        #handleArmorAction(event, actor, actionId) {
+            if (actionId === 'all') {
+                actor.sheet.rollArmor();
+            } else {
+                actor.sheet.rollSpecificArmor(actionId);
+            }
+        }
+
+        /**
+         * Handle weapon action
+         * @private
+         * @param {object} event    The event
+         * @param {object} actor    The actor
+         * @param {string} actionId The action id
+         */
+        #handleWeaponAction(event, actor, actionId) {
+            actor.sheet.rollGear(actionId);
+        }
+
+        /**
+         * Handle Combat action
+         * @private
+         * @param {object} event    The event
+         * @param {object} actor    The actor
+         * @param {string} actionId The action id
+         */
+        #handleCombatAction(event, actor, actionId) {
+            actor.sheet.rollAction(actionId);
+        }
+
+        /**
+         * Handle spell action
+         * @private
+         * @param {object} event    The event
+         * @param {object} actor    The actor
+         * @param {string} actionId The action id
+         */
+        #handleSpellAction(event, actor, actionId) {
+            actor.sheet.rollSpell(actionId);
+        }
+
+        /**
+         * Handle condition action
+         * @private
+         * @param {object} event    The event
+         * @param {object} actor    The actor
+         * @param {string} actionId The action id
+         */
+        #handleConditionAction(event, actor, actionId) {
+            actor.toggleCondition(actionId);
+        }
+
+        /**
+         * Handle consumable action
+         * @private
+         * @param {object} event    The event
+         * @param {object} actor    The actor
+         * @param {string} actionId The action id
+         */
+        #handleConsumableAction(event, actor, actionId) {
+            actor.sheet.rollConsumable(actionId);
         }
     }
 })
