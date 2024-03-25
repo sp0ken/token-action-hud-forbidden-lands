@@ -21,7 +21,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                 return this.doRenderItem(this.actor, actionId)
             }
 
-            const knownCharacters = ['character']
+            const knownCharacters = ['character', 'monster']
 
             // If single actor is selected
             if (this.actor) {
@@ -29,14 +29,20 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                 return
             }
 
+            // If multiple actors are selected
             const controlledTokens = canvas.tokens.controlled
                 .filter((token) => knownCharacters.includes(token.actor?.type))
 
-            // If multiple actors are selected
-            for (const token of controlledTokens) {
-                const actor = token.actor
-                await this.#handleAction(event, actor, token, actionTypeId, actionId)
+            if (actionTypeId === 'utility' && actionId === 'initiative') {
+                this.#handleGroupInitiative(controlledTokens)
+            } else {
+                for (const token of controlledTokens) {
+                    const actor = token.actor
+                    await this.#handleAction(event, actor, token, actionTypeId, actionId)
+                }
             }
+
+            
         }
 
         /**
@@ -79,6 +85,9 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                     break
                 case 'weapon':
                     this.#handleWeaponAction(event, actor, actionId)
+                    break
+                case 'monsterAttack':
+                    this.#handleMonsterAttackAction(event, actor, actionId)
                     break
                 case 'action':
                     this.#handleCombatAction(event, actor, actionId)
@@ -131,7 +140,8 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                 case 'initiative':
                     const combatants = [...game.combat?.combatants?.entries()]
                     if (combatants.length) {
-                        const combatantId = combatants.find(([key, combatant]) => combatant.actorId === actor.id)[0]
+                        const pendingCombatants = combatants.filter(([key, combatant]) => !combatant.initiative)
+                        const combatantId = pendingCombatants.find(([key, combatant]) => combatant.actorId === actor.id)?.[0]
                         if (combatantId) game.combat.rollInitiative(combatantId);
                     }
                     break;
@@ -140,6 +150,24 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                         await game.combat?.nextTurn()
                     }
                     break
+            }
+        }
+
+        /**
+         * Handle group initiative action
+         * @private
+         * @param {object} tokens    The tokens
+         */
+        async #handleGroupInitiative(tokens) {
+            const combatants = [...game.combat?.combatants?.entries()]
+            if (combatants.length) {
+                const combatantsId = [];
+                for (const token of tokens) {
+                    const actorId = token.document.actorId;
+                    const combatantId = combatants.find(([key, combatant]) => combatant.actorId === actorId)?.[0];
+                    if (combatantId) combatantsId.push(combatantId);
+                }
+                if (combatantsId.length) game.combat.rollInitiative(combatantsId);
             }
         }
 
@@ -173,7 +201,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          * @param {string} actionId The action id
          */
         #handleArmorAction(event, actor, actionId) {
-            if (actionId === 'all') {
+            if (actionId === 'all' || actionId === 'monster') {
                 actor.sheet.rollArmor();
             } else {
                 actor.sheet.rollSpecificArmor(actionId);
@@ -189,6 +217,21 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          */
         #handleWeaponAction(event, actor, actionId) {
             actor.sheet.rollGear(actionId);
+        }
+
+        /**
+         * Handle monster attack
+         * @private
+         * @param {object} event    The event
+         * @param {object} actor    The actor
+         * @param {string} actionId The action id
+         */
+        #handleMonsterAttackAction(event, actor, actionId) {
+            if (actionId === 'random') {
+                actor.sheet.rollAttack();
+            } else {
+                actor.sheet.rollSpecificAttack(actionId);
+            }
         }
 
         /**
