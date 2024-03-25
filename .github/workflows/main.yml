@@ -53,3 +53,10 @@ jobs:
           artifacts: "./module.json,./master.zip"
           tag: latest
           body: ${{ github.event.release.body }}
+
+      - name: Publish FoundryVTT Package
+        id: publish_on_sentry
+        uses: cs96and/FoundryVTT-release-package@v1.0.2
+        with:
+          package-token: ${{ secrets.PACKAGE_TOKEN }}
+          manifest-url: https://github.com/${{github.repository}}/releases/download/${{github.event.release.tag_name}}/module.json
