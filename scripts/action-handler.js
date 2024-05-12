@@ -220,6 +220,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
         name: coreModule.api.Utils.i18n('ARMOR.TOTAL'),
         encodedValue: 'armor|all',
       };
+      if (!actionsMap['armor']) actionsMap['armor'] = [];
       actionsMap['armor'].push(globalArmor);
 
       // Create group data
