@@ -8,6 +8,7 @@ Token Action HUD Forbidden Lands is a repositionable HUD of actions for a select
 # Features
 - Make rolls directly from the HUD instead of opening your character sheet.
 - Use items from the HUD or right-click an item to open its sheet.
+	- On equipped weapons, `shift-click` triggers a parry and `alt-click` a disarm action.
 - Move the HUD and choose to expand the menus up or down.
 - Unlock the HUD to customise layout and groups per user, and actions per actor.
 - Add your own macros, journal entries and roll table compendiums.

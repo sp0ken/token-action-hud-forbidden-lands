@@ -13,6 +13,12 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          * @param {string} encodedValue The encoded value
          */
         async handleActionClick(event, encodedValue) {
+            let keyModifier = '';
+            if (this.shift) {
+                keyModifier = 'shift'
+            } else if (this.alt) {
+                keyModifier = 'alt'
+            }
             const [actionTypeId, actionId] = encodedValue.split('|')
 
             const renderable = ['item']
@@ -25,7 +31,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 
             // If single actor is selected
             if (this.actor) {
-                await this.#handleAction(event, this.actor, this.token, actionTypeId, actionId)
+                await this.#handleAction(event, this.actor, this.token, actionTypeId, actionId, keyModifier)
                 return
             }
 
@@ -38,7 +44,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
             } else {
                 for (const token of controlledTokens) {
                     const actor = token.actor
-                    await this.#handleAction(event, actor, token, actionTypeId, actionId)
+                    await this.#handleAction(event, actor, token, actionTypeId, actionId, keyModifier)
                 }
             }
 
@@ -71,8 +77,9 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          * @param {object} token        The token
          * @param {string} actionTypeId The action type id
          * @param {string} actionId     The actionId
+         * @param {string} keyModifier     Which key is pressed (shift or alt)
          */
-        async #handleAction(event, actor, token, actionTypeId, actionId) {
+        async #handleAction(event, actor, token, actionTypeId, actionId, keyModifier) {
             switch (actionTypeId) {
                 case 'attributes':
                     this.#handleAttributeAction(event, actor, actionId)
@@ -84,7 +91,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                     this.#handleArmorAction(event, actor, actionId)
                     break
                 case 'weapon':
-                    this.#handleWeaponAction(event, actor, actionId)
+                    this.#handleWeaponAction(event, actor, actionId, keyModifier)
                     break
                 case 'monsterAttack':
                     this.#handleMonsterAttackAction(event, actor, actionId)
@@ -214,9 +221,20 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
          * @param {object} event    The event
          * @param {object} actor    The actor
          * @param {string} actionId The action id
+         * @param {string} keyModifier     Which key is pressed (shift or alt)
          */
-        #handleWeaponAction(event, actor, actionId) {
-            actor.sheet.rollGear(actionId);
+        #handleWeaponAction(event, actor, actionId, keyModifier) {
+            switch (keyModifier) {
+                case 'shift':
+                    actor.sheet.rollAction('parry', actionId);
+                    break;
+                case 'alt':
+                    actor.sheet.rollAction('disarm', actionId);
+                    break;
+                default:
+                    actor.sheet.rollGear(actionId);
+                    break;
+            }
         }
 
         /**
