@@ -14,7 +14,9 @@
           "hint": "Choose whether to display unequipped items on the HUD",
           "name": "Display Unequipped"
         }
-      }
+      },
+      "weaponTooltipParry": "Hold <kbd>shift</kbd> and click to <em>Parry</em>",
+      "weaponTooltipDisarm": "Hold <kbd>alt</kbd> and click to <em>Disarm</em>"
     }
   }
 }

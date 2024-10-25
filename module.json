@@ -14,19 +14,19 @@
     "minimum": "11",
     "verified": "12.326"
   },
-  "esmodules": [
-    "./scripts/init.js"
-  ],
-  "scripts": [
-  ],
-  "styles": [
-    "./styles/tah-template-style.css"
-  ],
+  "esmodules": ["./scripts/init.js"],
+  "scripts": [],
+  "styles": ["./styles/tah-template-style.css"],
   "languages": [
     {
       "lang": "en",
       "name": "English",
       "path": "languages/en.json"
+    },
+    {
+      "lang": "fr",
+      "name": "Français",
+      "path": "languages/fr.json"
     }
   ],
   "packs": [],
@@ -38,7 +38,7 @@
         "compatibility": [
           {
             "minimum": "11.4.2",
-            "verified": "12.0.0"
+            "verified": "12.1.0"
           }
         ]
       }
@@ -49,9 +49,9 @@
         "type": "module",
         "compatibility": [
           {
-            "minimum": "1.5.0",
-            "maximum": "1.5",
-            "verified": "1.5.2"
+            "minimum": "2.0.0",
+            "maximum": "2.0",
+            "verified": "2.0.2"
           }
         ]
       }

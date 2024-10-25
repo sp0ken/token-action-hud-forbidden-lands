@@ -1,0 +1,8 @@
+{
+  "tokenActionHud": {
+    "template": {
+      "weaponTooltipParry": "Maintenir <kbd>maj</kbd> puis cliquer pour <em>Parer</em>",
+      "weaponTooltipDisarm": "Maintenir <kbd>alt</kbd> puis cliquer pour <em>Desarmer</em>"
+    }
+  }
+}
