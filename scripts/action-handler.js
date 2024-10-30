@@ -15,7 +15,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
      * @override
      * @param {array} groupIds
      */
-    async buildSystemActions(groupIds) {
+    async buildSystemActions(_groupIds) {
       // Set actor and token variables
       this.actors = !this.actor ? this.#getActors() : [this.actor];
       this.actorType = this.actor?.type;
@@ -93,7 +93,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           const name = translatedLabel;
           const description = `<div><h3>${name}</h3><ul><li>${coreModule.api.Utils.i18n("VALUE")}: ${attribute.value}</li></ul></div>`;
 
-          const encodedValue = [actionType, id].join(this.delimiter);
           const tooltip = {
             content: description,
             class: "tah-system-tooltip",
@@ -104,7 +103,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             id,
             name,
             tooltip,
-            encodedValue,
+            system: { actionType, actionId: id },
           });
         }
       } catch (e) {
@@ -151,7 +150,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           const name = translatedSkillLabel;
           const description = `<div><h3>${name}</h3><ul><li>${translatedAttributeLabel}: ${attribute.value}</li><li>${translatedSkillLabel}: ${skill.value}</li><li>${coreModule.api.Utils.i18n("VALUE")}: ${attribute.value + skill.value}</li></ul></div>`;
 
-          const encodedValue = [actionType, id].join(this.delimiter);
           const tooltip = {
             content: description,
             class: "tah-system-tooltip",
@@ -162,7 +160,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             id,
             name,
             tooltip,
-            encodedValue,
+            system: { actionType, actionId: id },
           });
         }
       } catch (e) {
@@ -248,7 +246,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             direction: "DOWN",
           };
 
-          const encodedValue = [actionType, id].join(this.delimiter);
           const img = Utils.getImage(item);
 
           if (!actionsMap[actionType]) actionsMap[actionType] = [];
@@ -257,15 +254,15 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             id,
             name,
             img,
-            encodedValue,
             tooltip,
+            system: { actionType, actionId: id },
           });
         });
       } catch (e) {
         coreModule.api.Logger.error(e);
         return null;
       }
-      console.log(this.actor);
+
       // Add global armor action
       const tooltip = {
         content: `<div><h3>${coreModule.api.Utils.i18n("ARMOR.TOTAL")}</h3><ul><li>${coreModule.api.Utils.i18n("GEAR.BONUS")}: ${armorTotal}</li></ul></div>`,
@@ -276,7 +273,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         id: "all",
         name: coreModule.api.Utils.i18n("ARMOR.TOTAL"),
         tooltip,
-        encodedValue: "armor|all",
+        system: { actionType: "armor", actionId: "all" },
       };
       if (!actionsMap["armor"]) actionsMap["armor"] = [];
       actionsMap["armor"].push(globalArmor);
@@ -312,7 +309,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         actions.push({
           id: combat_action.value,
           name: coreModule.api.Utils.i18n(`ACTION.${combat_action.label}`),
-          encodedValue: ["action", combat_action.value].join(this.delimiter),
+          system: { actionType: "action", actionId: combat_action.value },
         });
       });
 
@@ -342,7 +339,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const randomAttack = {
         id: "random",
         name: coreModule.api.Utils.i18n("HEADER.ATTACK"),
-        encodedValue: "monsterAttack|random",
+        system: { actionType: "monsterAttack", actionId: "random" },
       };
       actionsMap["monsterAttack"] = [randomAttack];
 
@@ -372,7 +369,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             direction: "DOWN",
           };
 
-          const encodedValue = [actionType, id].join(this.delimiter);
           const img = Utils.getImage(item);
 
           if (!actionsMap[actionType]) actionsMap[actionType] = [];
@@ -381,8 +377,8 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             id,
             name,
             img,
-            encodedValue,
             tooltip,
+            system: { actionType, actionId: id },
           });
         });
       } catch (e) {
@@ -424,7 +420,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         id: "monster",
         name: coreModule.api.Utils.i18n("ARMOR.TOTAL"),
         tooltip,
-        encodedValue: "armor|monster",
+        system: { actionType: "armor", actionId: "monster" },
       };
       // // Add actions to HUD
       this.addGroup(armorGroupData, parentGroupData);
@@ -447,7 +443,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         actions.push({
           id: combat_action.value,
           name: coreModule.api.Utils.i18n(`ACTION.${combat_action.label}`),
-          encodedValue: ["action", combat_action.value].join(this.delimiter),
+          system: { actionType: "action", actionId: combat_action.value },
         });
       });
 
@@ -494,7 +490,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             direction: "DOWN",
           };
 
-          const encodedValue = [actionType, id].join(this.delimiter);
           const img = Utils.getImage(item);
 
           if (!actionsMap[item.system.rank]) actionsMap[item.system.rank] = [];
@@ -503,8 +498,8 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             id,
             name,
             img,
-            encodedValue,
             tooltip,
+            system: { actionType, actionId: id },
           });
         });
       } catch (e) {
@@ -546,15 +541,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           const translatedLabel = coreModule.api.Utils.i18n(condition.label);
           const name = translatedLabel;
 
-          const encodedValue = [actionType, id].join(this.delimiter);
-
           const cssClass = condition.value ? " active" : "";
 
           actions.push({
             id,
             name,
             cssClass,
-            encodedValue,
+            system: { actionType, actionId: id },
           });
         }
       } catch (e) {
@@ -596,12 +589,10 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             game.fbl.config.consumableDice[consumable.value] ?? "0";
           const name = `${translatedLabel} ${translatedValue}`;
 
-          const encodedValue = [actionType, id].join(this.delimiter);
-
           actions.push({
             id,
             name,
-            encodedValue,
+            system: { actionType, actionId: id },
           });
         }
       } catch (e) {
@@ -650,7 +641,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         const actionTypeName =
           `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
         const listName = `${actionTypeName}${name}`;
-        const encodedValue = [actionType, id].join(this.delimiter);
         const info1 = {};
         let cssClass = "";
         if (combatType[0] === "initiative" && game.combat) {
@@ -678,10 +668,10 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         return {
           id,
           name,
-          encodedValue,
           info1,
           cssClass,
           listName,
+          system: { actionType, actionId: id },
         };
       });
 
@@ -724,12 +714,12 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         const actionTypeName =
           `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
         const listName = `${actionTypeName}${name}`;
-        const encodedValue = [actionType, id].join(this.delimiter);
+
         return {
           id,
           name,
-          encodedValue,
           listName,
+          system: { actionType, actionId: id },
         };
       });
 
